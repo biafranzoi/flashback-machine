@@ -1,0 +1,963 @@
+/* Tema claro é o padrão. O escuro só entra por escolha explícita, via
+   data-tema no <html> — não seguimos a preferência do sistema.
+
+   A paleta é quente de propósito: os cinzas puxam para o papel e a tinta,
+   não para o cinza neutro de interface. Minimalismo sem frieza.
+
+   Contraste sobre o papel (WCAG, texto pequeno pede 4.5:1):
+     tinta        15.7:1   títulos e texto em destaque
+     tinta-fraca   8.4:1   corpo secundário
+     tinta-tenue   4.9:1   anos, eras, metadados
+     linha         3.2:1   a linha do tempo, tiques e hastes
+     traco         2.2:1   bordas de chips, painéis, barra de rolagem */
+:root {
+  --tinta:        #211e18;
+  --tinta-fraca:  #4e4940;
+  --tinta-tenue:  #726c5f;
+  --papel:        #faf8f2;
+  --papel-alto:   #fffefb;
+  --traco:        #b3a894;
+  --linha:        #948b77;
+  --acento:       #9c4a28;
+
+  /* estados preenchidos: um escuro quente, menos duro que preto puro */
+  --selecao:       #2d281f;
+  --selecao-texto: #faf8f2;
+
+  /* sombras de tom quente — sombra cinza sobre papel creme suja a cor */
+  --sombra-leve:  0 1px 2px rgb(74 58 36 / .05), 0 6px 18px -12px rgb(74 58 36 / .22);
+  --sombra-media: 0 2px 6px rgb(74 58 36 / .07), 0 14px 36px -20px rgb(74 58 36 / .26);
+  --sombra-forte: 0 2px 8px rgb(74 58 36 / .08), -26px 0 64px -34px rgb(74 58 36 / .34);
+  --veu-cor: rgb(74 58 36 / .16);
+
+  color-scheme: light;   /* faz o menu nativo do seletor acompanhar o tema */
+
+  --gaveta: 430px;
+  --gaveta-folga: 14px;  /* espelhado em INSET_GAVETA, no app.js */
+  --curva: 14px;
+  --serif: "Newsreader", Iowan Old Style, Palatino, Georgia, serif;
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+}
+
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+
+  --tinta:        #eeece5;
+  --tinta-fraca:  #a9a69b;
+  --tinta-tenue:  #837e71;
+  --papel:        #16150f;
+  --papel-alto:   #201e16;
+  --traco:        #3c392e;
+  --linha:        #585446;
+  --acento:       #dd9169;
+
+  --selecao:       #eeece5;
+  --selecao-texto: #16150f;
+
+  --sombra-leve:  0 1px 2px rgb(0 0 0 / .30), 0 6px 18px -12px rgb(0 0 0 / .55);
+  --sombra-media: 0 2px 6px rgb(0 0 0 / .34), 0 14px 36px -20px rgb(0 0 0 / .62);
+  --sombra-forte: 0 2px 8px rgb(0 0 0 / .38), -26px 0 64px -34px rgb(0 0 0 / .70);
+  --veu-cor: rgb(0 0 0 / .42);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--serif);
+  font-optical-sizing: auto;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+::selection { background: color-mix(in srgb, var(--acento) 22%, transparent); }
+
+/* ---------- topo ---------- */
+
+.apenas-leitor {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.topo {
+  flex: none;
+  padding: 30px 28px 22px;
+}
+
+/* três colunas para o título ficar centrado de verdade,
+   independentemente da largura do que está nos lados */
+.barra {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 18px;
+}
+.barra-lado { display: flex; min-width: 0; }
+.barra-lado--fim { justify-content: flex-end; }
+
+.barra h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+  font-weight: 400;
+  letter-spacing: 0.012em;
+  white-space: nowrap;
+}
+
+/* ---------- seletor de país ---------- */
+
+.campo-pais { position: relative; display: inline-flex; align-items: center; }
+
+.campo-pais select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 7px 34px 7px 16px;
+  background: var(--papel-alto);
+  border: 1px solid var(--traco);
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  cursor: pointer;
+  box-shadow: var(--sombra-leve);
+  transition: color .18s, border-color .18s, box-shadow .18s;
+}
+.campo-pais select:hover {
+  color: var(--tinta);
+  border-color: var(--tinta-tenue);
+  box-shadow: var(--sombra-media);
+}
+.campo-pais select:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+.campo-seta {
+  position: absolute;
+  right: 14px;
+  width: 11px; height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--tinta-tenue);
+  pointer-events: none;
+}
+
+.tema-troca {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  appearance: none;
+  background: var(--papel-alto);
+  border: 1px solid var(--traco);
+  border-radius: 50%;
+  color: var(--tinta-tenue);
+  cursor: pointer;
+  box-shadow: var(--sombra-leve);
+  transition: color .18s, border-color .18s, box-shadow .18s;
+}
+.tema-troca:hover {
+  color: var(--tinta);
+  border-color: var(--tinta-tenue);
+  box-shadow: var(--sombra-media);
+}
+.tema-troca:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+.tema-troca .icone {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* mostra o ícone do tema para o qual se vai, não o atual */
+.tema-troca .icone-sol { display: none; }
+:root[data-tema="escuro"] .tema-troca .icone-sol { display: block; }
+:root[data-tema="escuro"] .tema-troca .icone-lua { display: none; }
+
+/* ---------- controles ---------- */
+
+.controles {
+  flex: none;
+  padding: 6px 28px 20px;
+  border-bottom: 1px solid var(--traco);
+}
+
+/* bloco centrado, mas de largura própria: assim os dois rótulos
+   ("Períodos" e "Temas") ficam alinhados um sob o outro */
+.controles-interno {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.grupo { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.grupo[hidden] { display: none; }
+
+.grupo-rotulo {
+  flex: none;
+  width: 64px;
+  text-align: right;
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+}
+
+/* rola na horizontal em vez de quebrar em linhas irregulares */
+.grupo-itens {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 1px;
+}
+.grupo-itens::-webkit-scrollbar { display: none; }
+.grupo-itens > * { flex: none; }
+
+/* esmaece a ponta quando há mais itens fora da vista */
+.grupo-itens.transborda-dir {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+          mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+}
+.grupo-itens.transborda-esq {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 30px), transparent);
+          mask-image: linear-gradient(to left, #000 calc(100% - 30px), transparent);
+}
+.grupo-itens.transborda-esq.transborda-dir {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+          mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+}
+
+.eras { gap: 2px; }
+
+.eras button {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 6px 13px;
+  font-family: var(--sans);
+  font-size: 0.73rem;
+  letter-spacing: 0.04em;
+  color: var(--tinta-tenue);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color .18s, background .18s, box-shadow .18s;
+}
+.eras button:hover {
+  color: var(--tinta);
+  background: color-mix(in srgb, var(--traco) 26%, transparent);
+}
+.eras button[aria-current="true"] {
+  color: var(--selecao-texto);
+  background: var(--selecao);
+  box-shadow: var(--sombra-leve);
+}
+
+/* chips de tema — nenhum selecionado significa "mostrar tudo" */
+.chip {
+  appearance: none;
+  padding: 5px 14px;
+  font-family: var(--sans);
+  font-size: 0.69rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--papel-alto);
+  border: 1px solid var(--traco);
+  border-radius: 999px;
+  color: var(--tinta-tenue);
+  cursor: pointer;
+  transition: color .18s, background .18s, border-color .18s, box-shadow .18s;
+}
+.chip:hover {
+  color: var(--tinta);
+  border-color: var(--tinta-tenue);
+  box-shadow: var(--sombra-leve);
+}
+.chip:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.chip[aria-pressed="true"] {
+  background: var(--selecao);
+  border-color: var(--selecao);
+  color: var(--selecao-texto);
+  box-shadow: var(--sombra-leve);
+}
+.chip[aria-pressed="true"]:hover { color: var(--selecao-texto); }
+
+.chip-limpar {
+  background: none;
+  border-style: dashed;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-style: italic;
+}
+
+/* ---------- palco ---------- */
+
+.palco { position: relative; flex: 1 1 auto; min-height: 0; }
+
+.rolagem {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--traco) transparent;
+  outline: none;
+  cursor: grab;
+}
+.rolagem.arrastando { cursor: grabbing; }
+/* a barra é a principal pista de que há mais linha fora da tela:
+   fina, mas visível o bastante para ser notada e arrastada */
+.rolagem::-webkit-scrollbar { height: 12px; }
+.rolagem::-webkit-scrollbar-thumb {
+  background: var(--traco);
+  border: 4px solid var(--papel);
+  border-radius: 99px;
+}
+.rolagem::-webkit-scrollbar-thumb:hover { background: var(--tinta-tenue); }
+.rolagem::-webkit-scrollbar-track { background: transparent; }
+
+.trilha {
+  position: relative;
+  height: 100%;
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* uma raia por país; com um país só, ocupa a altura inteira */
+.raia { position: relative; flex: 1 1 0; min-height: 0; }
+
+/* a linha se dissolve nas pontas em vez de ser cortada a seco */
+.linha {
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent, var(--linha) 70px, var(--linha) calc(100% - 70px), transparent);
+}
+
+.rotulo-pais {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: inline-block;
+  padding: 4px 12px 2px 0;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+  background: var(--papel);
+  pointer-events: none;
+}
+
+.borda-esq, .borda-dir {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 64px;
+  pointer-events: none;
+}
+.borda-esq { left: 0;  background: linear-gradient(to right, var(--papel), transparent); }
+.borda-dir { right: 0; background: linear-gradient(to left,  var(--papel), transparent); }
+
+/* Atalhos para o marco mais próximo fora da tela. Em séculos vazios a linha
+   fica sem nenhum ponto, e sem isso não há como saber para que lado ir. */
+.vizinho {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  max-width: 200px;
+  padding: 6px 13px;
+  background: var(--papel-alto);
+  border: 1px solid var(--traco);
+  border-radius: 999px;
+  box-shadow: var(--sombra-leve);
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: var(--tinta-tenue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  animation: surgir .3s ease both;
+  transition: color .18s, border-color .18s, box-shadow .18s;
+}
+.vizinho:hover {
+  color: var(--tinta);
+  border-color: var(--tinta-tenue);
+  box-shadow: var(--sombra-media);
+}
+.vizinho:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.vizinho-esq { left: 14px; }
+.vizinho-dir { right: 14px; }
+.vizinho[hidden] { display: none; }
+
+/* ---------- eras e régua ---------- */
+
+.faixa-era {
+  position: absolute;
+  bottom: 8px;
+  height: 1.6em;
+  border-left: 1px solid var(--traco);
+  padding-left: 10px;
+  font-family: var(--sans);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tique {
+  position: absolute;
+  top: 50%;
+  width: 1px; height: 5px;
+  margin-top: -2px;
+  background: var(--linha);
+  opacity: .65;
+  pointer-events: none;
+}
+.tique.secular { height: 11px; margin-top: -5px; opacity: 1; }
+.tique-rotulo {
+  position: absolute;
+  top: 50%;
+  margin-top: 14px;
+  transform: translateX(-50%);
+  font-family: var(--sans);
+  font-size: 0.63rem;
+  letter-spacing: 0.08em;
+  color: var(--tinta-tenue);
+  pointer-events: none;
+}
+
+/* ---------- marcos ---------- */
+
+@keyframes surgir {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.marco {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  transform: translateX(var(--x));
+  /* entrada escalonada: a linha se compõe em vez de aparecer de supetão */
+  animation: surgir .34s ease both;
+  animation-delay: var(--atraso, 0ms);
+}
+
+.marco .alvo {
+  position: absolute;
+  top: 50%; left: -17px;
+  width: 34px; height: 34px;
+  margin-top: -17px;
+  padding: 0;
+  appearance: none;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.marco .alvo:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+.marco .ponto {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 10px; height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--papel);
+  border: 1.5px solid var(--linha);
+  transition: transform .22s cubic-bezier(.34,1.3,.64,1), background .18s,
+              border-color .18s, box-shadow .22s;
+}
+
+.marco .intervalo {
+  position: absolute;
+  top: 50%; left: 0;
+  height: 3px;
+  margin-top: -1.5px;
+  width: var(--span);
+  background: var(--linha);
+  opacity: .55;
+  border-radius: 99px;
+  pointer-events: none;
+  transition: background .18s, opacity .18s;
+}
+
+.marco .haste {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  background: var(--linha);
+  opacity: .5;
+  pointer-events: none;
+  transition: background .18s, opacity .18s;
+}
+.marco[data-lado="acima"] .haste  { bottom: 50%; margin-bottom: 8px; height: calc(var(--desloc) - 8px); }
+.marco[data-lado="abaixo"] .haste { top: 50%;    margin-top: 8px;    height: calc(var(--desloc) - 8px); }
+
+.marco .rotulo {
+  position: absolute;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+}
+.marco[data-lado="acima"] .rotulo  { bottom: 50%; margin-bottom: var(--desloc); }
+.marco[data-lado="abaixo"] .rotulo { top: 50%;    margin-top: var(--desloc); }
+
+.rotulo .ano {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--tinta-tenue);
+  transition: color .18s;
+}
+.rotulo .titulo {
+  display: block;
+  font-size: 0.98rem;
+  color: var(--tinta-fraca);
+  transition: color .18s;
+}
+
+/* na escala "tudo" os títulos não cabem: fica só o ano */
+.trilha.compacto .rotulo .titulo { display: none; }
+
+/* rótulo que não cabe na altura da raia: some, o ponto fica */
+.marco.sem-rotulo .rotulo,
+.marco.sem-rotulo .haste { display: none; }
+
+.marco.realce .ponto {
+  background: var(--acento);
+  border-color: var(--acento);
+  transform: scale(1.45);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--acento) 15%, transparent);
+}
+.marco.realce .intervalo,
+.marco.realce .haste { background: var(--acento); opacity: 1; }
+.marco.realce .rotulo .titulo { color: var(--tinta); }
+.marco.realce .rotulo .ano { color: var(--acento); }
+
+.marco.ativo .ponto {
+  background: var(--selecao);
+  border-color: var(--selecao);
+  transform: scale(1.35);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--selecao) 12%, transparent);
+}
+.marco.ativo .rotulo .titulo { color: var(--tinta); }
+
+/* ---------- dica ---------- */
+
+.dica {
+  position: absolute;
+  z-index: 5;
+  max-width: 290px;
+  padding: 13px 16px;
+  background: var(--papel-alto);
+  border: 1px solid var(--traco);
+  border-radius: 10px;
+  box-shadow: var(--sombra-media);
+  font-size: 0.89rem;
+  line-height: 1.5;
+  color: var(--tinta-fraca);
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: surgir .18s ease both;
+}
+.dica strong {
+  display: block;
+  font-weight: 500;
+  color: var(--tinta);
+  margin-bottom: 4px;
+}
+
+/* ---------- rodapé ---------- */
+
+.rodape {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 28px 20px;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  color: var(--tinta-tenue);
+}
+
+/* ---------- controle de escala ---------- */
+
+.escala { display: flex; align-items: center; gap: 13px; }
+
+.escala-rotulo {
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+}
+
+/* barras de altura crescente: a forma já diz o que o controle faz */
+.escala-niveis { display: flex; align-items: flex-end; gap: 3px; height: 19px; }
+
+.escala-nivel {
+  appearance: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 11px;
+  height: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .18s;
+}
+.escala-nivel:hover { background: color-mix(in srgb, var(--traco) 26%, transparent); }
+.escala-nivel::before {
+  content: "";
+  display: block;
+  width: 7px;
+  height: var(--h);
+  border-radius: 2px;
+  background: var(--traco);
+  transition: background .18s;
+}
+.escala-nivel:hover::before { background: var(--tinta-tenue); }
+/* o nível ativo se distingue pela cor, não pelo tamanho: no primeiro nível
+   a barra tem 5px e o preenchimento sozinho passaria despercebido */
+.escala-nivel[aria-pressed="true"]::before { background: var(--acento); }
+.escala-nivel:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+
+.escala-leitura {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: var(--tinta-fraca);
+  min-width: 92px;
+}
+
+/* crédito: presente, nunca em destaque — não compete com o conteúdo */
+.credito { margin: 0; letter-spacing: 0.03em; white-space: nowrap; }
+.elo-sobre {
+  appearance: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--tinta-fraca) 35%, transparent);
+  font: inherit;
+  color: var(--tinta-fraca);
+  cursor: pointer;
+  transition: color .18s, border-color .18s;
+}
+.elo-sobre:hover { color: var(--tinta); border-bottom-color: currentColor; }
+.elo-sobre:focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; border-radius: 2px; }
+.credito span { margin: 0 5px; color: var(--tinta-tenue); }
+.credito a {
+  color: var(--tinta-fraca);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--tinta-fraca) 35%, transparent);
+  transition: color .18s, border-color .18s;
+}
+.credito a:hover { color: var(--tinta); border-bottom-color: currentColor; }
+.credito a:focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; border-radius: 2px; }
+
+.ajuda { margin: 0; letter-spacing: 0.03em; }
+.ajuda kbd {
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  padding: 2px 5px;
+  background: color-mix(in srgb, var(--traco) 22%, transparent);
+  border-radius: 4px;
+}
+
+/* ---------- painel ---------- */
+
+/* gaveta flutuante, afastada das bordas: lê como um cartão pousado
+   sobre a linha, não como um painel colado no canto da janela */
+.painel {
+  position: fixed;
+  z-index: 20;
+  top: var(--gaveta-folga);
+  right: var(--gaveta-folga);
+  bottom: var(--gaveta-folga);
+  width: min(var(--gaveta), calc(100% - var(--gaveta-folga) * 2));
+  padding: 44px 38px 40px;
+  background: var(--papel-alto);
+  border: 1px solid var(--traco);
+  border-radius: var(--curva);
+  box-shadow: var(--sombra-forte);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateX(calc(100% + var(--gaveta-folga) * 2));
+  transition: transform .34s cubic-bezier(.32,.72,.24,1);
+  visibility: hidden;
+}
+.painel.aberto { transform: none; visibility: visible; }
+
+.painel-fechar {
+  position: absolute;
+  top: 12px; right: 14px;
+  width: 30px; height: 30px;
+  display: grid;
+  place-items: center;
+  appearance: none;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--tinta-tenue);
+  cursor: pointer;
+  transition: color .18s, background .18s;
+}
+.painel-fechar:hover {
+  color: var(--tinta);
+  background: color-mix(in srgb, var(--traco) 26%, transparent);
+}
+.painel-fechar:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+.painel-meta {
+  margin: 0 0 12px;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+}
+.painel-meta span:not(:empty) ~ span:not(:empty)::before { content: " · "; }
+
+.painel h2 {
+  margin: 0 0 18px;
+  font-size: 1.68rem;
+  font-weight: 400;
+  line-height: 1.18;
+  letter-spacing: 0.005em;
+}
+.painel h3 {
+  margin: 0 0 9px;
+  font-family: var(--sans);
+  font-size: 0.66rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+}
+
+.painel-resumo { margin: 0 0 22px; font-size: 1.08rem; line-height: 1.52; }
+
+.painel-figura { margin: 0 0 24px; }
+.painel-figura img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--traco);
+  border-radius: 8px;
+}
+.painel-figura figcaption {
+  margin-top: 8px;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--tinta-tenue);
+}
+
+.painel-detalhe {
+  margin: 0 0 28px;
+  color: var(--tinta-fraca);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+/* a controvérsia vem em itálico: é comentário sobre o relato, não o relato */
+.painel-disputa {
+  margin: 0 0 28px;
+  padding: 2px 0 2px 16px;
+  border-left: 2px solid color-mix(in srgb, var(--acento) 45%, transparent);
+}
+.painel-disputa p {
+  margin: 0;
+  font-size: 0.96rem;
+  font-style: italic;
+  line-height: 1.65;
+  color: var(--tinta-fraca);
+}
+
+.painel-temas {
+  list-style: none;
+  margin: 0 0 30px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.painel-temas li {
+  font-family: var(--sans);
+  font-size: 0.63rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+  background: color-mix(in srgb, var(--traco) 18%, transparent);
+  border-radius: 999px;
+  padding: 3px 11px;
+}
+
+.painel-fontes ul { list-style: none; margin: 0; padding: 0; }
+.painel-fontes li { margin-bottom: 13px; }
+.painel-fontes a {
+  font-family: var(--sans);
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: var(--acento);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--acento) 40%, transparent);
+  transition: border-color .18s;
+}
+.painel-fontes a:hover { border-bottom-color: currentColor; }
+.painel-fontes a::after { content: " ↗"; }
+.painel-fontes .tipo {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.61rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+  margin-bottom: 2px;
+}
+
+/* ---------- painel Sobre ---------- */
+
+#painel-sobre h3 { margin-top: 26px; }
+#painel-sobre .painel-detalhe { margin-bottom: 14px; }
+
+/* ---------- painel Apoiadores ---------- */
+
+#painel-apoiadores h3 { margin-top: 26px; }
+#painel-apoiadores .painel-detalhe { margin-bottom: 14px; }
+
+/* os nomes são o conteúdo da página: vêm na serifada do corpo, não na
+   tipografia de apoio */
+.apoiadores { list-style: none; margin: 0 0 4px; padding: 0; }
+.apoiadores li {
+  padding: 11px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--traco) 55%, transparent);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.apoiadores li:first-child { border-top: 1px solid color-mix(in srgb, var(--traco) 55%, transparent); }
+.apoiador-desde {
+  margin-left: 9px;
+  font-family: var(--sans);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tinta-tenue);
+}
+
+/* a lista vazia não é erro nem falta: é o estado inicial do projeto */
+.apoiadores-vazio {
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--traco) 16%, transparent);
+  border-radius: 8px;
+  font-style: italic;
+}
+
+/* a nota sobre o método de escrita: presente, sem alarde */
+.painel-nota {
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--traco) 16%, transparent);
+  border-radius: 8px;
+  font-size: 0.93rem !important;
+}
+
+.elo-externo {
+  font-family: var(--sans);
+  font-size: 0.83rem;
+  color: var(--acento);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--acento) 40%, transparent);
+  transition: border-color .18s;
+}
+.elo-externo:hover { border-bottom-color: currentColor; }
+.elo-externo::after { content: " ↗"; }
+
+.veu {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: var(--veu-cor);
+  animation: surgir .3s ease both;
+}
+
+/* ---------- telas estreitas (funcional, não otimizado) ---------- */
+
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .topo { padding: 22px 16px 14px; }
+  /* o título divide a linha com o seletor e o alternador: em tela estreita
+     ele quebra em duas linhas em vez de ser cortado */
+  .barra { gap: 10px; }
+  .barra h1 {
+    white-space: normal;
+    font-size: clamp(1.15rem, 5vw, 1.5rem);
+    line-height: 1.15;
+  }
+  .controles { padding: 4px 16px 16px; }
+  .rodape { padding: 12px 16px 16px; gap: 12px; }
+  .ajuda { display: none; }
+  .dica { display: none; }
+  /* sem o rótulo "Escala", as barras e a leitura já se explicam —
+     e o crédito deixa de ser cortado */
+  .escala { gap: 10px; }
+  .escala-rotulo { display: none; }
+  .escala-leitura { min-width: 0; }
+  /* com Sobre, Apoiadores e o crédito na mesma linha, em tela estreita ela
+     quebra em vez de ser cortada — mas nunca no meio de um nome */
+  .credito { white-space: normal; text-align: right; }
+  .credito a { white-space: nowrap; }
+  .painel {
+    top: auto;
+    left: var(--gaveta-folga);
+    right: var(--gaveta-folga);
+    bottom: var(--gaveta-folga);
+    width: auto;
+    max-height: calc(100% - 64px);
+    padding: 40px 24px 30px;
+    transform: translateY(calc(100% + var(--gaveta-folga) * 2));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Flashback Machine">
+  <!-- A linha do tempo reduzida ao essencial: três marcos com os intervalos
+       encurtando à direita, e o presente em destaque. Acompanha o tema do
+       navegador. -->
+  <style>
+    .fundo { fill: #faf8f2 }
+    .linha { stroke: #948b77 }
+    .ponto { fill: #211e18 }
+    .agora { fill: #9c4a28 }
+    @media (prefers-color-scheme: dark) {
+      .fundo { fill: #211e18 }
+      .linha { stroke: #6b6456 }
+      .ponto { fill: #faf8f2 }
+      .agora { fill: #dd9169 }
+    }
+  </style>
+  <circle class="fundo" cx="16" cy="16" r="16"/>
+  <line class="linha" x1="4.5" y1="16" x2="27.5" y2="16" stroke-width="1.6" stroke-linecap="round"/>
+  <circle class="ponto" cx="10"   cy="16" r="2.5"/>
+  <circle class="ponto" cx="16.5" cy="16" r="2.5"/>
+  <circle class="agora" cx="22"   cy="16" r="2.5"/>
+</svg>

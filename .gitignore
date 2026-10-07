@@ -1,0 +1,14 @@
+# Só os arquivos do site vão para o repositório público.
+# Ferramentas de desenvolvimento e documentação interna ficam locais.
+
+DOCUMENTACAO.md
+servidor.js
+verificar-fontes.js
+logo.html
+marca.html
+.claude/
+
+# sistema
+.DS_Store
+Thumbs.db
+desktop.ini

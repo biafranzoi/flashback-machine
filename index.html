@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flashback Machine</title>
+<meta name="description" content="História do Brasil, sem negacionismo. Linha do tempo interativa com 80 marcos, de 1500 a 2023, cada um com sua fonte.">
+<script>
+  /* Define o tema antes da primeira pintura, para não piscar ao carregar.
+     O padrão é claro: a preferência do sistema não é consultada, só a
+     escolha explícita de quem já usou o alternador. */
+  (function () {
+    var t;
+    try { t = localStorage.getItem("tema"); } catch (e) {}
+    document.documentElement.setAttribute("data-tema", t === "escuro" ? "escuro" : "claro");
+  })();
+</script>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#faf8f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16150f" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="barra">
+    <div class="barra-lado">
+      <span class="campo-pais">
+        <label class="apenas-leitor" for="pais-seletor">País</label>
+        <select id="pais-seletor"></select>
+        <svg class="campo-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </div>
+
+    <h1>Flashback Machine</h1>
+
+    <div class="barra-lado barra-lado--fim">
+      <button type="button" class="tema-troca" id="tema-troca" aria-label="Alternar entre tema claro e escuro">
+        <svg class="icone icone-lua" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.2 14.8A8.6 8.6 0 0 1 9.2 3.8a8.6 8.6 0 1 0 11 11Z"/>
+        </svg>
+        <svg class="icone icone-sol" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.1"/>
+          <path d="M12 2.6v2.5M12 18.9v2.5M21.4 12h-2.5M5.1 12H2.6M18.6 5.4l-1.8 1.8M7.2 16.8l-1.8 1.8M18.6 18.6l-1.8-1.8M7.2 7.2 5.4 5.4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="controles">
+  <div class="controles-interno">
+    <div class="grupo" id="grupo-eras">
+      <span class="grupo-rotulo">Períodos</span>
+      <div class="grupo-itens eras" id="nav-eras" aria-label="Ir para um período"></div>
+    </div>
+    <div class="grupo" id="grupo-temas">
+      <span class="grupo-rotulo">Temas</span>
+      <div class="grupo-itens filtros" id="filtros" role="group" aria-label="Filtrar por tema"></div>
+    </div>
+  </div>
+</nav>
+
+<main class="palco">
+  <div class="rolagem" id="rolagem" tabindex="0" aria-label="Linha do tempo">
+    <div class="trilha" id="trilha"></div>
+  </div>
+  <div class="dica" id="dica" hidden aria-hidden="true"></div>
+  <div class="borda-esq" aria-hidden="true"></div>
+  <div class="borda-dir" aria-hidden="true"></div>
+
+  <button type="button" class="vizinho vizinho-esq" id="vizinho-esq" hidden></button>
+  <button type="button" class="vizinho vizinho-dir" id="vizinho-dir" hidden></button>
+</main>
+
+<footer class="rodape">
+  <div class="escala" role="group" aria-label="Escala da linha do tempo">
+    <span class="escala-rotulo">Escala</span>
+    <div class="escala-niveis" id="escala-niveis"></div>
+    <span class="escala-leitura" id="escala-leitura"></span>
+  </div>
+  <p class="ajuda">
+    <kbd>←</kbd> <kbd>→</kbd> marcos · <kbd>Enter</kbd> abrir · <kbd>Esc</kbd> fechar ·
+    <kbd>+</kbd> <kbd>−</kbd> escala · <kbd>Ctrl</kbd> + roda ou duplo clique aproxima
+  </p>
+
+  <p class="credito">
+    <button type="button" class="elo-sobre" id="abrir-sobre">Sobre</button>
+    <span aria-hidden="true">·</span>
+    <button type="button" class="elo-sobre" id="abrir-apoiadores">Apoiadores</button>
+    <span aria-hidden="true">·</span>
+    Criado por <a href="https://biafranzoi.github.io/work/" target="_blank" rel="noopener noreferrer">Bia Franzoi</a>
+  </p>
+</footer>
+
+<aside class="painel" id="painel" aria-labelledby="painel-titulo" aria-hidden="true">
+  <button type="button" class="painel-fechar" id="painel-fechar" aria-label="Fechar">×</button>
+
+<div id="painel-marco">
+  <p class="painel-meta">
+    <span id="painel-ano"></span>
+    <span id="painel-era"></span>
+    <span id="painel-pais"></span>
+  </p>
+
+  <h2 id="painel-titulo"></h2>
+  <p class="painel-resumo" id="painel-resumo"></p>
+
+  <figure class="painel-figura" id="painel-figura" hidden>
+    <img id="painel-img" alt="">
+    <figcaption id="painel-legenda"></figcaption>
+  </figure>
+
+  <p class="painel-detalhe" id="painel-detalhe"></p>
+
+  <div class="painel-disputa" id="painel-disputa" hidden>
+    <h3>O que se disputa</h3>
+    <p id="painel-disputa-texto"></p>
+  </div>
+
+  <ul class="painel-temas" id="painel-temas"></ul>
+
+  <div class="painel-fontes">
+    <h3>Para ler mais</h3>
+    <ul id="painel-fontes"></ul>
+  </div>
+</div>
+
+<div id="painel-sobre" hidden>
+  <p class="painel-meta">Sobre</p>
+  <h2>Flashback Machine</h2>
+
+  <p class="painel-resumo">
+    Uma linha do tempo interativa da história, onde a distância entre os
+    acontecimentos é proporcional ao tempo de verdade — e cada afirmação tem fonte.
+  </p>
+
+  <h3>Quem faz</h3>
+  <p class="painel-detalhe">
+    Sou Bia Franzoi, designer há mais de 12 anos e apaixonada por história. Sempre
+    quis enxergar como os marcos históricos se relacionam entre si, e nunca encontrei
+    isso em lugar nenhum. A Flashback Machine é a ferramenta que eu queria ter.
+  </p>
+  <p class="painel-detalhe">
+    Acredito que conhecimento histórico precisa ser interativo e fácil de percorrer,
+    porque entender o passado é o que permite melhorar o presente e projetar um
+    futuro melhor para todos.
+  </p>
+  <p class="painel-detalhe">
+    <a class="elo-externo" href="https://biafranzoi.github.io/work/" target="_blank" rel="noopener noreferrer">Meu portfólio</a>
+  </p>
+
+  <h3>Como é feito</h3>
+  <p class="painel-detalhe">
+    A nomenclatura e a interpretação seguem o que é corrente na historiografia
+    acadêmica. Quando a leitura de um episódio é genuinamente disputada entre
+    historiadores, o marco traz um campo dizendo o que está em jogo — isso não
+    serve para dar peso igual a teoria sem lastro documental.
+  </p>
+  <p class="painel-detalhe">
+    São 100 fontes, todas verificadas, sendo 18 documentos primários: textos de
+    leis, constituições e atos institucionais, a Carta de Pero Vaz de Caminha e a
+    sentença da Corte Interamericana de Direitos Humanos.
+  </p>
+  <p class="painel-detalhe painel-nota">
+    Os textos são escritos com apoio de IA. O critério editorial e a curadoria são
+    meus, e cada marco traz suas fontes para você conferir.
+  </p>
+  <p class="painel-detalhe">
+    Não há anúncio, login nem rastreador.
+  </p>
+
+  <h3>Onde quero chegar</h3>
+  <p class="painel-detalhe">
+    O Brasil é o primeiro país, não o único. A ideia é ver vários países lado a lado
+    no mesmo eixo de tempo — as grandes navegações portuguesas correndo em paralelo
+    com a colonização do Brasil — e, país por país, dar conta do mundo.
+  </p>
+</div>
+
+<div id="painel-apoiadores" hidden>
+  <p class="painel-meta">Apoiadores</p>
+  <h2>Quem sustenta o projeto</h2>
+
+  <p class="painel-resumo">
+    A Flashback Machine é gratuita, sem anúncio, sem login e sem patrocínio.
+    Quem apoia com dinheiro é nomeado aqui.
+  </p>
+
+  <ul class="apoiadores" id="apoiadores-lista" hidden></ul>
+
+  <p class="painel-detalhe apoiadores-vazio" id="apoiadores-vazio" hidden>
+    Ainda não há apoiadores — esta lista começa com quem chegar primeiro.
+  </p>
+
+  <h3>Como apoiar</h3>
+  <p class="painel-detalhe">
+    A contribuição paga a pesquisa, a verificação das fontes e os próximos
+    países a entrar na linha do tempo. Qualquer valor conta, e é possível
+    cancelar quando quiser.
+  </p>
+  <p class="painel-detalhe">
+    <a class="elo-externo" href="https://apoia.se/flashback-machine" target="_blank" rel="noopener noreferrer">Apoiar no Apoia-se</a>
+  </p>
+</div>
+</aside>
+<div class="veu" id="veu" hidden></div>
+
+<script src="dados.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
