@@ -916,6 +916,190 @@ body {
   animation: surgir .3s ease both;
 }
 
+/* ---------- abertura ---------- */
+
+/* Fica por cima de tudo, inclusive do painel, e some por conta própria.
+   Os filhos começam invisíveis: nada entra antes da classe .abertura--pronto,
+   que app.js põe quando a fonte termina de carregar — assim o nome não troca
+   de fonte no meio do movimento. */
+.abertura {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  transition: opacity .28s ease;
+}
+
+/* O papel é uma camada à parte, e não o fundo da abertura, porque na saída ele
+   precisa sumir sozinho: o nome fica, e é ele que voa até o topo. */
+.abertura::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--papel);
+  transition: opacity .4s ease;
+}
+
+.abertura-interno {
+  position: relative;   /* acima do papel, que é o ::before */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  padding: 0 24px;
+}
+
+/* a marca: a linha nasce da esquerda e os pontos pousam um a um */
+.abertura-marca {
+  position: relative;
+  width: 164px;
+  height: 14px;
+  transition: opacity .24s ease, transform .24s ease;
+}
+
+.abertura-linha {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  margin-top: -0.75px;
+  border-radius: 1px;
+  background: var(--linha);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.abertura-ponto {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tinta);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.2);
+}
+
+/* as mesmas posições do favicon: o intervalo encurta à direita */
+.abertura-ponto--1 { left: 24%; }
+.abertura-ponto--2 { left: 52%; }
+.abertura-ponto--3 {
+  left: 76%;
+  width: 10px;
+  height: 10px;
+  background: var(--acento);
+}
+
+/* o presente ganha um halo que se abre uma vez, como um pulso */
+.abertura-ponto--3::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--acento);
+  opacity: 0;
+}
+
+.abertura-titulo {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 5.2vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.1;
+  /* o mesmo entreletra do título do topo: assim o pouso bate também no
+     corpo da letra, e não só na largura total */
+  letter-spacing: 0.012em;
+  text-align: center;
+  white-space: nowrap;
+  color: var(--tinta);
+  opacity: 0;
+  transition: transform .46s cubic-bezier(.55, 0, .25, 1);
+}
+
+/* O nome é escrito letra a letra, mas todas já estão no lugar desde o começo,
+   invisíveis: o espaço fica reservado, e nada se desloca enquanto o texto
+   aparece. Quem monta as letras é o app.js. */
+.abertura-letra { opacity: 0; }
+.abertura-letra--vista { opacity: 1; }
+
+/* O cursor caminha entre as letras. Tem largura zero na conta final — as
+   margens negativas devolvem o fio que a barra ocupa —, para a linha não
+   andar um pixel a cada batida. */
+.abertura-cursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 0.78em;
+  margin: 0 -0.75px;
+  vertical-align: -0.04em;
+  background: var(--acento);
+  animation: aberturaPisca .9s linear infinite;
+}
+
+.abertura--pronto .abertura-linha {
+  animation: aberturaLinha .66s cubic-bezier(.22, .61, .36, 1) both;
+}
+.abertura--pronto .abertura-ponto {
+  animation: aberturaPonto .5s cubic-bezier(.34, 1.3, .64, 1) both;
+}
+.abertura--pronto .abertura-ponto--1 { animation-delay: .30s; }
+.abertura--pronto .abertura-ponto--2 { animation-delay: .42s; }
+.abertura--pronto .abertura-ponto--3 { animation-delay: .54s; }
+.abertura--pronto .abertura-ponto--3::after {
+  animation: aberturaHalo 1.1s ease-out .66s both;
+}
+.abertura--pronto .abertura-titulo { opacity: 1; }
+
+/* A saída: o papel se apaga, a marca sobe um fio e some, e o nome caminha até
+   o lugar exato do título do topo. As medidas chegam em --dx, --dy e --esc,
+   calculadas no app.js no instante da saída. O nome não tem animação nenhuma
+   sobre o transform — por isso a transição pega: o navegador não faz transição
+   de uma propriedade que esteja sob comando de uma animação. */
+.abertura--fim { pointer-events: none; }
+.abertura--fim::before { opacity: 0; }
+
+.abertura--fim .abertura-marca {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.abertura--fim .abertura-titulo {
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(var(--esc, 1));
+}
+
+/* sem o voo — quem pediu menos movimento, ou quando o título do topo está em
+   duas linhas e não há para onde voar: a abertura inteira se apaga */
+.abertura--seco { opacity: 0; pointer-events: none; }
+
+/* Enquanto a abertura está em cena o título do topo espera escondido, para não
+   aparecer duas vezes. Ele acende no instante exato em que o nome pousa e a
+   abertura sai — sem transição nenhuma: como o pouso é no mesmo pixel, a troca
+   acontece dentro de um quadro só e não há o que ver. */
+.abertura-ativa .barra h1 { opacity: 0; }
+
+@keyframes aberturaLinha {
+  from { opacity: 0; transform: scaleX(0); }
+  to   { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes aberturaPonto {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes aberturaHalo {
+  from { opacity: .7; transform: scale(1); }
+  to   { opacity: 0;  transform: scale(2.6); }
+}
+
+/* o cursor pisca seco, sem meio-tom: o corte entre 49% e 50% é instantâneo */
+@keyframes aberturaPisca {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
 /* ---------- telas estreitas (funcional, não otimizado) ---------- */
 
 @media (max-width: 760px) {
@@ -942,6 +1126,8 @@ body {
      quebra em vez de ser cortada — mas nunca no meio de um nome */
   .credito { white-space: normal; text-align: right; }
   .credito a { white-space: nowrap; }
+  .abertura-marca { width: 132px; }
+  .abertura-interno { gap: 22px; }
   .painel {
     top: auto;
     left: var(--gaveta-folga);

@@ -22,8 +22,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css">
+<!-- Sem JavaScript a linha do tempo não se monta e a abertura nunca sairia:
+     nesse caso ela simplesmente não aparece. -->
+<noscript><style>.abertura { display: none }</style></noscript>
 </head>
 <body>
+
+<!-- A abertura cobre o instante em que a linha do tempo é construída, e
+     apresenta a marca: a linha, os três marcos com os intervalos encurtando
+     e o presente em destaque — o mesmo desenho do favicon. app.js a remove. -->
+<div class="abertura" id="abertura" aria-hidden="true">
+  <div class="abertura-interno">
+    <div class="abertura-marca">
+      <span class="abertura-linha"></span>
+      <span class="abertura-ponto abertura-ponto--1"></span>
+      <span class="abertura-ponto abertura-ponto--2"></span>
+      <span class="abertura-ponto abertura-ponto--3"></span>
+    </div>
+    <p class="abertura-titulo">Flashback Machine</p>
+  </div>
+</div>
 
 <header class="topo">
   <div class="barra">

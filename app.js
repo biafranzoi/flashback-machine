@@ -7,6 +7,177 @@
      tema     = filtro subtrativo; nunca cria raia
 */
 
+/* ---------- abertura ----------
+   A tela de abertura é removida aqui, e não por CSS, porque o tempo em que
+   ela fica depende de duas coisas que só o JavaScript sabe: se a fonte já
+   chegou e se quem está lendo pediu menos movimento. */
+(function () {
+  "use strict";
+
+  var abertura = document.getElementById("abertura");
+  if (!abertura) return;
+
+  var raiz = document.documentElement;
+  var titulo = abertura.querySelector(".abertura-titulo");
+  var cabecalho = document.querySelector(".barra h1");
+
+  var curto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ESPERA = curto ? 240 : 1750;   // tempo em tela, contado do início do movimento
+  var TEXTO  = 500;                  // a marca entra primeiro; o nome vem atrás
+  var BATIDA = 52;                   // milissegundos por letra
+  var VOO    = 460;                  // o trajeto até o topo, espelhado no estilo.css
+  var SECO   = 300;                  // a saída sem voo
+
+  raiz.classList.add("abertura-ativa");   // o título do topo espera escondido
+
+  /* ---- a máquina de escrever ----
+     O nome é partido em letras e cada uma entra no seu tempo. Todas já ocupam
+     o seu lugar desde o começo, invisíveis, e o cursor tem largura zero: assim
+     a linha não se desloca a cada batida, e a medida para o voo é a mesma do
+     começo ao fim. */
+  var letras = [];
+  var cursor = null;
+  var relogio = null;
+
+  function montarTexto() {
+    if (!titulo) return;
+    var texto = titulo.textContent;
+    titulo.textContent = "";
+
+    cursor = document.createElement("span");
+    cursor.className = "abertura-cursor";
+
+    for (var i = 0; i < texto.length; i++) {
+      var letra = document.createElement("span");
+      letra.className = "abertura-letra";
+      letra.textContent = texto.charAt(i);
+      titulo.appendChild(letra);
+      letras.push(letra);
+    }
+    titulo.insertBefore(cursor, letras[0] || null);
+  }
+
+  function escrever() {
+    var i = 0;
+    relogio = setInterval(function () {
+      if (i >= letras.length) { parar(); return; }   // escrito: o cursor fica piscando
+      letras[i].className = "abertura-letra abertura-letra--vista";
+      i++;
+      titulo.insertBefore(cursor, letras[i] || null);
+    }, BATIDA);
+  }
+
+  function parar() {
+    if (relogio) { clearInterval(relogio); relogio = null; }
+  }
+
+  /* escreve de uma vez o que faltava, e recolhe o cursor: ou a saída chegou
+     antes, ou a aba estava em segundo plano e ninguém viu as letras caírem */
+  function terminarTexto() {
+    parar();
+    for (var i = 0; i < letras.length; i++) {
+      letras[i].className = "abertura-letra abertura-letra--vista";
+    }
+    if (cursor && cursor.parentNode) cursor.parentNode.removeChild(cursor);
+  }
+
+  montarTexto();
+
+  /* O voo é um FLIP: mede onde o nome está e onde o título do topo vai estar, e
+     leva um ao outro com um transform só. A escala sai da razão entre as
+     larguras — mesmo texto e mesma fonte, então ela equivale à razão entre os
+     corpos. Devolve false quando não há voo possível. */
+  function medir() {
+    if (curto || !titulo || !cabecalho) return false;
+
+    /* em tela estreita o título do topo quebra em duas linhas: não há um
+       destino único para onde voar */
+    var linhas = document.createRange();
+    linhas.selectNodeContents(cabecalho);
+    if (linhas.getClientRects().length > 1) return false;
+
+    var de = titulo.getBoundingClientRect();
+    var para = cabecalho.getBoundingClientRect();
+    if (!de.width || !para.width) return false;
+
+    titulo.style.setProperty("--dx", (para.left + para.width / 2 - de.left - de.width / 2).toFixed(2) + "px");
+    titulo.style.setProperty("--dy", (para.top + para.height / 2 - de.top - de.height / 2).toFixed(2) + "px");
+    titulo.style.setProperty("--esc", (para.width / de.width).toFixed(4));
+    return true;
+  }
+
+  function encerrar() {
+    raiz.classList.remove("abertura-ativa");
+    abertura.remove();
+  }
+
+  var saindo = false;
+  function sair() {
+    if (saindo) return;
+    saindo = true;
+
+    /* quem pula a abertura no primeiro instante não vê o voo: o nome ainda
+       está chegando, e partir dali seria um salto */
+    var assentado = iniciado && (Date.now() - inicioEm) > 1400;
+
+    /* Encerra a entrada antes de medir: o nome vai inteiro para o topo. O
+       relógio e as animações não andam juntos — numa aba em segundo plano as
+       animações param e os temporizadores seguem —, e medir um nome ainda a
+       meio caminho daria uma escala errada para o voo. */
+    if (assentado) {
+      terminarTexto();
+      if (abertura.getAnimations) {
+        abertura.getAnimations({ subtree: true }).forEach(function (a) {
+          try { a.finish(); } catch (e) {}
+        });
+      }
+    }
+
+    if (assentado && medir()) {
+      abertura.classList.add("abertura--fim");
+
+      /* no pouso, encerrar() acende o título do topo e tira a abertura no
+         mesmo quadro — um no lugar do outro, sem piscar */
+      setTimeout(encerrar, VOO);
+      return;
+    }
+
+    parar();
+    abertura.classList.add("abertura--seco");
+    raiz.classList.remove("abertura-ativa");
+    setTimeout(encerrar, SECO);
+  }
+
+  /* O movimento espera a Newsreader: começar antes faria o título trocar de
+     fonte no meio da animação. O prazo evita ficar preso numa fonte que não
+     carrega — e, se a fonte já estiver em cache, a promessa resolve antes. */
+  var iniciado = false;
+  var inicioEm = 0;
+  function iniciar() {
+    if (iniciado) return;
+    iniciado = true;
+    inicioEm = Date.now();
+    abertura.classList.add("abertura--pronto");
+
+    /* quem pediu menos movimento recebe o nome pronto, sem as batidas */
+    if (curto) { terminarTexto(); } else { setTimeout(escrever, TEXTO); }
+
+    setTimeout(sair, ESPERA);
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(iniciar);
+    setTimeout(iniciar, 900);
+  } else {
+    iniciar();
+  }
+
+  // quem já conhece a abertura pula: um clique, uma tecla ou um toque encerra
+  ["pointerdown", "keydown", "wheel", "touchstart"].forEach(function (ev) {
+    window.addEventListener(ev, sair, { once: true, passive: true });
+  });
+})();
+
 (function () {
   "use strict";
 
